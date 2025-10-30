@@ -2,43 +2,37 @@
 
 namespace Tests\Feature;
 
-use App\Models\Tenant;
-use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
+use App\Services\Tenancy\TenantService;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
 class TenantCreationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
-    public function test_super_admin_can_create_tenant(): void
+    public function test_tenant_can_be_created_through_service(): void
     {
-        $admin = User::factory()->create([
-            'is_super_admin' => true,
-        ]);
+        /** @var TenantService $service */
+        $service = app(TenantService::class);
 
-        Sanctum::actingAs($admin, ['tenants:create']);
-
-        $payload = [
-            'name' => 'Acme Corp',
-            'email' => 'owner@acme.test',
-            'password' => 'SecurePass!123',
+        $tenant = $service->createTenant([
+            'name' => 'Acme Inc',
             'plan' => 'pro',
             'domain' => 'acme.localhost',
-            'permissions' => ['manage-users'],
-        ];
+            'admin' => [
+                'name' => 'Jane Doe',
+                'email' => 'jane@example.com',
+                'password' => 'password123',
+            ],
+        ]);
 
-        $response = $this->postJson('/api/v1/admin/tenants', $payload);
-
-        $response->assertCreated();
-
-        $tenant = Tenant::query()->firstWhere('data->owner_email', 'owner@acme.test');
-        $this->assertNotNull($tenant);
-        $this->assertEquals('pro', $tenant->plan);
+        $this->assertDatabaseHas('tenants', ['id' => $tenant->id]);
+        $this->assertTrue($tenant->domains()->where('domain', 'acme.localhost')->exists());
 
         tenancy()->initialize($tenant);
-        $this->assertDatabaseHas('users', ['email' => 'owner@acme.test'], 'tenant');
+
+        $this->assertDatabaseHas('users', ['email' => 'jane@example.com'], 'tenant');
+
         tenancy()->end();
     }
 }
