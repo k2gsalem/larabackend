@@ -1,0 +1,103 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    container_name: saas-app
+    restart: unless-stopped
+    environment:
+      APP_ENV: local
+      APP_DEBUG: 'true'
+      DB_HOST: central-db
+      DB_DATABASE: saas_central
+      DB_USERNAME: saas
+      DB_PASSWORD: secret
+      TENANT_DB_HOST: tenant-db
+      TENANT_DB_USERNAME: tenant
+      TENANT_DB_PASSWORD: secret
+      REDIS_HOST: redis
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - central-db
+      - tenant-db
+      - redis
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: saas-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+  central-db:
+    image: mysql:8.0
+    container_name: saas-central-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: saas_central
+      MYSQL_USER: saas
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "3307:3306"
+    volumes:
+      - central-db-data:/var/lib/mysql
+
+  tenant-db:
+    image: mysql:8.0
+    container_name: saas-tenant-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: tenancy_template
+      MYSQL_USER: tenant
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "3308:3306"
+    volumes:
+      - tenant-db-data:/var/lib/mysql
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: saas-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  queue:
+    build:
+      context: .
+      target: dev
+    container_name: saas-queue
+    command: php artisan queue:work --tries=3
+    environment:
+      APP_ENV: local
+      DB_HOST: central-db
+      DB_DATABASE: saas_central
+      DB_USERNAME: saas
+      DB_PASSWORD: secret
+      TENANT_DB_HOST: tenant-db
+      TENANT_DB_USERNAME: tenant
+      TENANT_DB_PASSWORD: secret
+      REDIS_HOST: redis
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - app
+      - redis
+
+volumes:
+  central-db-data:
+  tenant-db-data:
+  redis-data:
