@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->by($request->user()?->getAuthIdentifier() ?? $request->ip()),
             ];
         });
+
         $middleware->alias([
             'tenant.user' => EnsureTenantUser::class,
             'tenant.initialize' => InitializeTenancyByRequestData::class,
@@ -40,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->group('tenant-api', [
             InitializeTenancyByRequestData::class,
+            PreventAccessFromCentralDomains::class,
             'auth:sanctum',
             EnsureTenantUser::class,
         ]);
