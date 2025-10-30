@@ -18,7 +18,11 @@ class TenantUserFactory extends Factory
         return [
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
+            'email_verified_at' => now(),
+            'phone' => $this->faker->unique()->e164PhoneNumber(),
+            'phone_verified_at' => now(),
             'password' => bcrypt('Password!123'),
+            'remember_token' => Str::random(10),
         ];
     }
 }

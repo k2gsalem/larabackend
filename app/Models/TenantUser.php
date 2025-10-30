@@ -23,6 +23,13 @@ class TenantUser extends Authenticatable
         'name',
         'email',
         'password',
+        'email_verified_at',
+        'phone',
+        'phone_verified_at',
+        'provider_name',
+        'provider_id',
+        'provider_avatar',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -34,6 +41,8 @@ class TenantUser extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
     }

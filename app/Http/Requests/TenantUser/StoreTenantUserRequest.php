@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Requests\Auth;
+declare(strict_types=1);
+
+namespace App\Http\Requests\TenantUser;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -9,19 +11,17 @@ use OpenApi\Annotations as OA;
 
 /**
  * @OA\Schema(
- *     schema="TenantRegisterRequest",
- *     required={"name","email","password","password_confirmation"},
+ *     schema="StoreTenantUserRequest",
+ *     required={"name","email"},
  *     @OA\Property(property="name", type="string"),
  *     @OA\Property(property="email", type="string", format="email"),
  *     @OA\Property(property="password", type="string", format="password"),
- *     @OA\Property(property="password_confirmation", type="string", format="password"),
  *     @OA\Property(property="phone", type="string"),
  *     @OA\Property(property="roles", type="array", @OA\Items(type="string")),
- *     @OA\Property(property="permissions", type="array", @OA\Items(type="string")),
- *     @OA\Property(property="device_name", type="string")
+ *     @OA\Property(property="permissions", type="array", @OA\Items(type="string"))
  * )
  */
-class TenantRegisterRequest extends FormRequest
+class StoreTenantUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -36,13 +36,12 @@ class TenantRegisterRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email:rfc', 'max:255', Rule::unique('users', 'email')],
+            'password' => ['nullable', 'string', 'min:12'],
             'phone' => ['nullable', 'string', 'max:32', Rule::unique('users', 'phone')],
-            'password' => ['required', 'string', 'min:12', 'confirmed'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['string', 'max:100'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'max:100'],
-            'device_name' => ['nullable', 'string', 'max:255'],
         ];
     }
 
