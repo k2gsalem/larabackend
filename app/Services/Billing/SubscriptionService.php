@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\BillingService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Validation\ValidationException;
 use Laravel\Cashier\Subscription as CashierSubscription;
 use RuntimeException;
 
@@ -20,7 +21,7 @@ class SubscriptionService
         $this->billingService ??= app(BillingService::class);
     }
 
-    public function createOrUpdate(User $user, string $plan, string $paymentMethod): CashierSubscription
+    public function createOrUpdate(User $user, string $plan, ?string $paymentMethod = null): CashierSubscription
     {
         $tenant = $this->resolveTenant();
         $this->ensureUserCanManageBilling($user);
@@ -28,6 +29,12 @@ class SubscriptionService
         $hasActiveSubscription = $tenant->subscribed(BillingService::DEFAULT_SUBSCRIPTION);
 
         if (! $hasActiveSubscription) {
+            if ($paymentMethod === null) {
+                throw ValidationException::withMessages([
+                    'payment_method' => ['A valid payment method is required to start a subscription.'],
+                ]);
+            }
+
             $this->billingService->initializeSubscription($tenant, $plan, $paymentMethod);
         } else {
             $this->billingService->swapPlan($tenant, $plan, $paymentMethod);

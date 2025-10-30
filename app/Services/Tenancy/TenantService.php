@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Stancl\Tenancy\Jobs\CreateDatabase;
-
 class TenantService
 {
     public function createTenant(array $payload): Tenant

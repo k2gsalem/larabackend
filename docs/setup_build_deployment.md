@@ -36,6 +36,8 @@ cp .env.example .env
 Update the `.env` file with the correct database credentials and any other
 project-specific settings.
 
+> **SQLite quick start:** To run everything with SQLite locally, set `DB_DRIVER=sqlite` and `TENANT_DB_DRIVER=sqlite` in your `.env`, then create `database/database.sqlite` (central) and `database/tenant.sqlite` (template) files before running migrations.
+
 ### 3. Install PHP dependencies
 
 ```bash

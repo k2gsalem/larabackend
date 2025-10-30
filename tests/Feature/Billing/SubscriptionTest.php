@@ -36,7 +36,7 @@ class SubscriptionTest extends TestCase
         $token = $registerResponse->json('token');
 
         app()->bind(SubscriptionService::class, static fn (): SubscriptionService => new class extends SubscriptionService {
-            public function createOrUpdate(User $user, string $plan, string $paymentMethod): CashierSubscription
+            public function createOrUpdate(User $user, string $plan, ?string $paymentMethod = null): CashierSubscription
             {
                 $subscription = new CashierSubscription();
                 $subscription->setConnection('tenant');

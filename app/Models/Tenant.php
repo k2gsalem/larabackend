@@ -23,6 +23,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         'name',
         'slug',
         'plan',
+        'admin',
         'data',
         'billing_meta',
     ];
