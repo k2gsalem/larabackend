@@ -10,6 +10,7 @@
 ## Project Documentation
 
 - [Setup, Build, and Deployment Guide](docs/setup_build_deployment.md)
+- [Troubleshooting Guide](docs/troubleshooting.md)
 
 ## About Laravel
 
