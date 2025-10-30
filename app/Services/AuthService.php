@@ -8,13 +8,14 @@ use App\Models\TenantUser;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class AuthService
 {
     /**
-     * @param  array{name:string,email:string,password:string,roles?:array<int,string>,permissions?:array<int,string>,device_name?:string}  $data
+     * @param  array{name:string,email:string,password:string,roles?:array<int,string>,permissions?:array<int,string>,device_name?:string,phone?:string}  $data
      */
     public function registerTenantUser(array $data): array
     {
@@ -22,27 +23,10 @@ class AuthService
             'name' => $data['name'],
             'email' => Str::lower($data['email']),
             'password' => Hash::make($data['password']),
+            'phone' => $data['phone'] ?? null,
         ]);
 
-        if (! empty($data['roles'])) {
-            $roles = collect($data['roles'])
-                ->filter()
-                ->map(fn (string $role) => Role::findOrCreate($role, 'tenant'))
-                ->map->name
-                ->toArray();
-
-            $user->syncRoles($roles);
-        }
-
-        if (! empty($data['permissions'])) {
-            $permissions = collect($data['permissions'])
-                ->filter()
-                ->map(fn (string $permission) => Permission::findOrCreate($permission, 'tenant'))
-                ->map->name
-                ->toArray();
-
-            $user->givePermissionTo($permissions);
-        }
+        $this->syncRolesAndPermissions($user, $data['roles'] ?? null, $data['permissions'] ?? null);
 
         $token = $user->createToken($data['device_name'] ?? 'tenant-api', ['*'])->plainTextToken;
 
@@ -61,6 +45,8 @@ class AuthService
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             throw new AuthenticationException('Invalid credentials.');
         }
+
+        $user->forceFill(['last_login_at' => Carbon::now()])->save();
 
         $token = $user->createToken($credentials['device_name'] ?? 'tenant-api', ['*'])->plainTextToken;
 
@@ -98,5 +84,32 @@ class AuthService
         }
 
         $user->currentAccessToken()?->delete();
+    }
+
+    /**
+     * @param  array<int, string>|null  $roles
+     * @param  array<int, string>|null  $permissions
+     */
+    private function syncRolesAndPermissions(TenantUser $user, ?array $roles, ?array $permissions): void
+    {
+        if ($roles !== null) {
+            $resolvedRoles = collect($roles)
+                ->filter()
+                ->map(fn (string $role) => Role::findOrCreate($role, 'tenant'))
+                ->map->name
+                ->toArray();
+
+            $user->syncRoles($resolvedRoles);
+        }
+
+        if ($permissions !== null) {
+            $resolvedPermissions = collect($permissions)
+                ->filter()
+                ->map(fn (string $permission) => Permission::findOrCreate($permission, 'tenant'))
+                ->map->name
+                ->toArray();
+
+            $user->syncPermissions($resolvedPermissions);
+        }
     }
 }
