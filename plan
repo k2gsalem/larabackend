@@ -1,0 +1,53 @@
+Build me a secure and scalable multi-tenant SaaS backend using Laravel 11.
+
+Requirements:
+
+Use stancl/tenancy for multi-tenant (multi-database) architecture.
+
+Use Laravel Sanctum for API authentication (token-based).
+
+Add role and permission control with spatie/laravel-permission.
+
+Add Stripe or Razorpay for subscription management using Laravel Cashier.
+
+All sensitive data should use env variables or Doppler, not hard-coded values.
+
+Write clean, PSR-12-compliant PHP code and separate logic into Services and Controllers.
+
+Use form requests for validation, resource transformers for API responses, and policy classes for access control.
+
+Protect against SQL injection, XSS, CSRF, mass assignment, and insecure file uploads.
+
+Use Redis for queues and cache.
+
+Dockerize the app with Nginx + PHP-FPM + MySQL + Redis.
+
+Include unit and feature tests for tenant creation, authentication, and billing.
+
+Add logging and error handling using Monolog and Sentry.
+
+Optimize queries with indexes and use pagination on API endpoints.
+
+Generate API documentation (OpenAPI / Swagger) automatically.
+
+Use GitHub Actions for CI/CD and deploy on AWS ECS (Fargate) or Laravel Vapor.
+
+🧠 Optional Add-On
+
+If you want frontend + mobile later:
+
+Then also build Next.js 15 + Tailwind CSS frontend and React Native + Expo mobile app that connect to this Laravel API securely via HTTPS with JWT tokens.
+
+🛡️ Bonus  Tip
+
+
+
+“Add validation and error handling here.”
+
+“Optimize this query for performance.”
+
+“Make this controller PSR-12 compliant.”
+
+“Add middleware to ensure only tenant users can access these routes.”
+
+“Explain potential security risks in this file.”
