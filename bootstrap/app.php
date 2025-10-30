@@ -27,29 +27,30 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        RateLimiter::for('api', function (Request $request) {
-            return [
-                Limit::perMinute((int) env('API_RATE_LIMIT', 60))
-                    ->by($request->user()?->getAuthIdentifier() ?? $request->ip()),
-            ];
-        });
+        // RateLimiter::for('api', function (Request $request) {
+        //     return [
+        //         Limit::perMinute((int) env('API_RATE_LIMIT', 60))
+        //             ->by($request->user()?->getAuthIdentifier() ?? $request->ip()),
+        //     ];
+        // });
+        
 
-        $middleware->alias([
-            'tenant.user' => EnsureTenantUser::class,
-            'tenant.initialize' => InitializeTenancyByRequestData::class,
-        ]);
+        // $middleware->alias([
+        //     'tenant.user' => EnsureTenantUser::class,
+        //     'tenant.initialize' => InitializeTenancyByRequestData::class,
+        // ]);
 
-        $middleware->group('tenant-api', [
-            InitializeTenancyByRequestData::class,
-            PreventAccessFromCentralDomains::class,
-            'auth:sanctum',
-            EnsureTenantUser::class,
-        ]);
+        // $middleware->group('tenant-api', [
+        //     InitializeTenancyByRequestData::class,
+        //     PreventAccessFromCentralDomains::class,
+        //     'auth:sanctum',
+        //     EnsureTenantUser::class,
+        // ]);
 
-        $middleware->group('api', [
-            SubstituteBindings::class,
-            'throttle:api',
-        ]);
+        // $middleware->group('api', [
+        //     SubstituteBindings::class,
+        //     'throttle:api',
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->reportable(function (\Throwable $throwable) {
