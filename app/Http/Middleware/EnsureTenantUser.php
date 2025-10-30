@@ -1,28 +1,30 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Http\Middleware;
 
+use App\Models\TenantUser;
 use Closure;
+use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Http\Request;
-use Stancl\Tenancy\Contracts\Tenant as TenantContract;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class EnsureTenantUser
 {
-    public function handle(Request $request, Closure $next): Response
+    public function __construct(private readonly AuthFactory $auth)
     {
-        $tenant = tenant();
+    }
 
-        abort_if(! $tenant instanceof TenantContract, Response::HTTP_NOT_FOUND, 'Tenant context missing.');
+    public function handle(Request $request, Closure $next, ?string $guard = null)
+    {
+        if (! tenant()) {
+            throw new NotFoundHttpException('Tenant context could not be resolved.');
+        }
 
-        $user = $request->user();
+        $user = $this->auth->guard($guard ?? 'sanctum')->user();
 
-        abort_if($user === null, Response::HTTP_UNAUTHORIZED, 'Authentication required.');
-
-        if ($user->getAttribute('tenant_id') !== null && $user->getAttribute('tenant_id') !== $tenant->getKey()) {
-            abort(Response::HTTP_FORBIDDEN, 'This action is only allowed for tenant members.');
+        if (! $user instanceof TenantUser) {
+            throw new AccessDeniedHttpException('Only tenant users may access this resource.');
         }
 
         return $next($request);
