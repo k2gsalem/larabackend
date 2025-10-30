@@ -28,11 +28,17 @@ abstract class TestCase extends BaseTestCase
 
         ini_set('memory_limit', '512M');
 
+        $this->configureSqliteConnections();
+
         $connection = $this->centralConnection();
 
         $this->prepareSqliteDatabase($connection);
-
         DB::purge($connection);
+
+        if ($connection !== 'tenant') {
+            $this->prepareSqliteDatabase('tenant');
+            DB::purge('tenant');
+        }
 
         $exitCode = Artisan::call('migrate:fresh', [
             '--force' => true,
@@ -40,7 +46,7 @@ abstract class TestCase extends BaseTestCase
         ]);
 
         if ($exitCode !== 0) {
-            throw new RuntimeException('Failed to migrate testing database: '.Artisan::output());
+            throw new RuntimeException('Failed to migrate testing database: ' . Artisan::output());
         }
     }
 
@@ -61,6 +67,35 @@ abstract class TestCase extends BaseTestCase
     protected function centralConnection(): string
     {
         return config('tenancy.database.central_connection', config('database.default'));
+    }
+
+    protected function configureSqliteConnections(): void
+    {
+        $centralPath = database_path('testing.sqlite');
+        $tenantPath = database_path('tenant-testing.sqlite');
+
+        $this->ensureSqliteFile($centralPath);
+        $this->ensureSqliteFile($tenantPath);
+
+        config()->set('database.connections.central', [
+            'driver' => 'sqlite',
+            'database' => $centralPath,
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ]);
+
+        config()->set('database.connections.tenant', [
+            'driver' => 'sqlite',
+            'database' => $tenantPath,
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ]);
+
+        config()->set('database.default', 'central');
+        config()->set('tenancy.database.central_connection', 'central');
+        config()->set('cache.default', 'array');
+        config()->set('permission.cache.store', 'array');
+        config()->set('queue.default', 'sync');
     }
 
     protected function prepareSqliteDatabase(string $connection): void
@@ -90,6 +125,19 @@ abstract class TestCase extends BaseTestCase
         }
 
         touch($database);
+    }
+
+    protected function ensureSqliteFile(string $path): void
+    {
+        $directory = dirname($path);
+
+        if (! is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        if (! file_exists($path)) {
+            touch($path);
+        }
     }
 
     protected function connectionUsesSqlite(string $connection): bool
