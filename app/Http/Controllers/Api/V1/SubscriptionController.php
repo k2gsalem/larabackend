@@ -7,30 +7,49 @@ use App\Http\Requests\Billing\SubscriptionRequest;
 use App\Services\Billing\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class SubscriptionController extends Controller
 {
     public function __construct(private readonly SubscriptionService $subscriptionService)
     {
-        $this->middleware('tenant.auth');
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/v1/billing/subscriptions",
+     *     operationId="tenantSubscriptionStore",
+     *     tags={"Billing"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/SubscriptionRequest")),
+     *     @OA\Response(response=200, description="Subscription activated")
+     * )
+     */
     public function store(SubscriptionRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+
         $subscription = $this->subscriptionService->createOrUpdate(
             $request->user(),
-            $request->validated('plan'),
-            $request->validated('payment_method'),
+            $validated['plan'],
+            $validated['payment_method'] ?? null,
         );
 
         return response()->json([
             'status' => 'active',
             'plan' => $subscription->stripe_price,
-        ], Response::HTTP_OK);
+        ]);
     }
 
-    public function destroy(Request $request): Response
+    /**
+     * @OA\Delete(
+     *     path="/api/v1/billing/subscriptions",
+     *     operationId="tenantSubscriptionCancel",
+     *     tags={"Billing"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(response=204, description="Subscription cancelled")
+     * )
+     */
+    public function destroy(Request $request)
     {
         $this->subscriptionService->cancel($request->user());
 

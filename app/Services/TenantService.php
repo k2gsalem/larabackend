@@ -63,7 +63,7 @@ class TenantService
 
     public function attachDomain(Tenant $tenant, string $domain): Domain
     {
-        $sanitized = Str::lower(Str::of($domain)->trim());
+        $sanitized = Str::of($domain)->trim()->lower()->value();
 
         return $tenant->domains()->create([
             'domain' => $sanitized,
@@ -73,12 +73,12 @@ class TenantService
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function seedTenantUser(array $payload): void
+    private function seedTenantUser(array $payload): TenantUser
     {
         /** @var TenantUser $user */
         $user = TenantUser::query()->create([
             'name' => $payload['name'],
-            'email' => $payload['email'],
+            'email' => Str::lower($payload['email']),
             'password' => Hash::make($payload['password']),
         ]);
 
@@ -100,6 +100,8 @@ class TenantService
         }
 
         $user->assignRole($role);
+
+        return $user;
     }
 
     public function updatePlan(Tenant $tenant, string $plan, ?string $paymentMethod = null): Tenant

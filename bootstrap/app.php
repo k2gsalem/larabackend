@@ -31,7 +31,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->group('tenant-api', [
             InitializeTenancyByRequestData::class,
-            PreventAccessFromCentralDomains::class,
             'auth:sanctum',
             EnsureTenantUser::class,
         ]);

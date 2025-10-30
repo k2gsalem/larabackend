@@ -3,11 +3,8 @@
 namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Mockery;
-use RuntimeException;
 use Stancl\Tenancy\Facades\Tenancy;
 
 abstract class TestCase extends BaseTestCase
@@ -24,29 +21,28 @@ abstract class TestCase extends BaseTestCase
 
     protected function setUp(): void
     {
-        parent::setUp();
-
-        ini_set('memory_limit', '512M');
+        if (! $this->app) {
+            $this->refreshApplication();
+        }
 
         $this->configureSqliteConnections();
 
         $connection = $this->centralConnection();
 
         $this->prepareSqliteDatabase($connection);
-        DB::purge($connection);
 
         if ($connection !== 'tenant') {
             $this->prepareSqliteDatabase('tenant');
-            DB::purge('tenant');
         }
 
-        $exitCode = Artisan::call('migrate:fresh', [
-            '--force' => true,
-            '--database' => $connection,
-        ]);
+        parent::setUp();
 
-        if ($exitCode !== 0) {
-            throw new RuntimeException('Failed to migrate testing database: ' . Artisan::output());
+        ini_set('memory_limit', '512M');
+
+        DB::purge($connection);
+
+        if ($connection !== 'tenant') {
+            DB::purge('tenant');
         }
     }
 
@@ -55,6 +51,9 @@ abstract class TestCase extends BaseTestCase
         if (($tenancy = Tenancy::getFacadeRoot()) && $tenancy->initialized) {
             Tenancy::end();
         }
+
+        DB::disconnect($this->centralConnection());
+        DB::purge($this->centralConnection());
 
         DB::disconnect('tenant');
         DB::purge('tenant');
@@ -110,12 +109,8 @@ abstract class TestCase extends BaseTestCase
             return;
         }
 
-        if (! Str::startsWith($database, ['/'])) {
-            $database = base_path($database);
-        }
-
-        if (file_exists($database)) {
-            unlink($database);
+        if ($connection === 'tenant' && file_exists($database)) {
+            @unlink($database);
         }
 
         $directory = dirname($database);

@@ -94,3 +94,4 @@ class BillingService
         return Cashier::usesCurrency()[0];
     }
 }
+

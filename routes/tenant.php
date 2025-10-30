@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\TenantAuthController;
 use App\Http\Controllers\Api\V1\RoleController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\TenantUserController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,5 +19,8 @@ Route::prefix('api/v1')->middleware('tenant.initialize')->group(function () {
 
         Route::apiResource('users', TenantUserController::class);
         Route::apiResource('roles', RoleController::class);
+
+        Route::post('billing/subscriptions', [SubscriptionController::class, 'store']);
+        Route::delete('billing/subscriptions', [SubscriptionController::class, 'destroy']);
     });
 });

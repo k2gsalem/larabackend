@@ -5,7 +5,7 @@ namespace App\Services\Tenancy;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
-use App\Models\User;
+use App\Models\TenantUser;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
@@ -33,7 +33,7 @@ class TenantProvisioner
     private function createDefaultRoles(): void
     {
         foreach (['owner', 'admin', 'member'] as $roleName) {
-            Role::findOrCreate($roleName, 'web');
+            Role::findOrCreate($roleName, 'tenant');
         }
     }
 
@@ -48,11 +48,11 @@ class TenantProvisioner
         ];
 
         foreach ($permissions as $permission) {
-            Permission::findOrCreate($permission, 'web');
+            Permission::findOrCreate($permission, 'tenant');
         }
 
-        Role::findByName('owner', 'web')->givePermissionTo($permissions);
-        Role::findByName('admin', 'web')->givePermissionTo([
+        Role::findByName('owner', 'tenant')->givePermissionTo($permissions);
+        Role::findByName('admin', 'tenant')->givePermissionTo([
             'users.invite',
             'users.view',
             'users.update',
@@ -71,15 +71,15 @@ class TenantProvisioner
 
         $passwordHash = $adminData['password_hash'] ?? Hash::make(Str::random(32));
 
-        $user = User::firstOrCreate(
-            ['email' => $adminData['email']],
+        $user = TenantUser::query()->firstOrCreate(
+            ['email' => Str::lower($adminData['email'])],
             [
                 'name' => $adminData['name'] ?? 'Tenant Owner',
                 'password' => $passwordHash,
             ],
         );
 
-        if (! $user->hasRole('owner')) {
+        if (! $user->hasRole('owner', 'tenant')) {
             $user->assignRole('owner');
         }
     }
